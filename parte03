@@ -1,0 +1,182 @@
+// LEDs
+const int ledAzul = 11;
+const int ledVerde = 12;
+const int ledVermelho = 13;
+
+// TMP36
+const int sensorTemp = A1;
+
+
+float H = 30;
+float L = 20;
+
+// HISTORICO DAS TEMPERATURAS
+float historico[20];
+int indice = 0;
+int totalLeituras = 0;
+
+void setup() {
+
+  pinMode(ledAzul, OUTPUT);
+  pinMode(ledVerde, OUTPUT);
+  pinMode(ledVermelho, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  int leitura = analogRead(sensorTemp);
+
+  // CONVERSAO DOS DADOS CAPTADOS
+  float tensao = leitura * (5.0 / 1023.0);
+  float temperatura = (tensao - 0.5) * 100.0;
+
+  // ----------------------------------------
+
+  historico[indice] = temperatura;
+
+  indice++;
+
+  if (indice >= 20) {
+    indice = 0;
+  }
+
+  if (totalLeituras < 20) {
+    totalLeituras++;
+  }
+
+
+  // ----------------------------------------
+  if (Serial.available()) {
+
+    String comando = Serial.readStringUntil('\n');
+
+    comando.trim();
+
+    // ALTERA LIMITE INFERIOR
+    if (comando.startsWith("L=")) {
+
+      L = comando.substring(2).toFloat();
+
+      Serial.print("LIMITE INFERIOR ALTERADO: ");
+      Serial.println(L);
+    }
+
+    // ALTERA LIMITE SUPERIOR
+    else if (comando.startsWith("H=")) {
+
+      H = comando.substring(2).toFloat();
+
+      Serial.print("LIMITE SUPERIOR ALTERADO: ");
+      Serial.println(H);
+    }
+
+    // TEMPERATURA ATUAL
+    else if (comando == "T") {
+
+      Serial.print("TEMPERATURA: ");
+      Serial.println(temperatura);
+    }
+
+    // STATUS COMPLETO
+    else if (comando == "S") {
+
+      Serial.print("TEMP:");
+      Serial.print(temperatura);
+
+      Serial.print(" | L:");
+      Serial.print(L);
+
+      Serial.print(" | H:");
+      Serial.println(H);
+    }
+
+   
+  // ----------------------------------------
+
+    // HISTORICO
+    else if (comando == "HISTORICO") {
+
+      Serial.println("HISTORICO:");
+
+      for (int i = 0; i < totalLeituras; i++) {
+
+        Serial.print(i);
+        Serial.print(": ");
+        Serial.println(historico[i]);
+      }
+    }
+
+    // ESTATISTICAS
+    else if (comando == "STATS") {
+
+      float soma = 0;
+      float maior = historico[0];
+      float menor = historico[0];
+
+      for (int i = 0; i < totalLeituras; i++) {
+
+        soma += historico[i];
+
+        if (historico[i] > maior) {
+          maior = historico[i];
+        }
+
+        if (historico[i] < menor) {
+          menor = historico[i];
+        }
+      }
+
+      float media = soma / totalLeituras;
+
+      Serial.println("ESTATISTICAS:");
+      
+      Serial.print("MEDIA: ");
+      Serial.println(media);
+
+      Serial.print("MAXIMA: ");
+      Serial.println(maior);
+
+      Serial.print("MINIMA: ");
+      Serial.println(menor);
+    }
+
+    // formato CSV
+    else if (comando == "CSV") {
+
+      Serial.println("indice,temperatura");
+
+      for (int i = 0; i < totalLeituras; i++) {
+
+        Serial.print(i);
+        Serial.print(",");
+        Serial.println(historico[i]);
+      }
+    }
+  }
+
+  
+
+  digitalWrite(ledAzul, LOW);
+  digitalWrite(ledVerde, LOW);
+  digitalWrite(ledVermelho, LOW);
+
+  // TEMP FRIA
+  if (temperatura < L) {
+
+    digitalWrite(ledAzul, HIGH);
+
+  // TEMP NORMAL
+  } else if (temperatura >= L && temperatura <= H) {
+
+    digitalWrite(ledVerde, HIGH);
+
+  // TEMP QUENTE
+  } else {
+
+    digitalWrite(ledVermelho, HIGH);
+  }
+
+  delay(500);
+}
