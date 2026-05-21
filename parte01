@@ -1,0 +1,57 @@
+// LEDs
+const int ledAzul = 11;
+const int ledVerde = 12;
+const int ledVermelho = 13;
+
+// TMP36
+const int sensorTemp = A1;
+
+void setup() {
+
+  pinMode(ledAzul, OUTPUT);
+  pinMode(ledVerde, OUTPUT);
+  pinMode(ledVermelho, OUTPUT);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  int leitura = analogRead(sensorTemp);
+
+  // CONVERSAO DOS DADOS CAPTADOS
+  float tensao = leitura * (5.0 / 1023.0);
+  float temperatura = (tensao - 0.5) * 100.0;
+  
+  float H = 30;
+  float L = 20;
+
+ 
+  // Serial
+  Serial.print(temperatura); 
+  Serial.print(",  "); 
+  Serial.print(L); 
+  Serial.print(",  "); 
+  Serial.println(H);
+  
+
+  digitalWrite(ledAzul, LOW);
+  digitalWrite(ledVerde, LOW);
+  digitalWrite(ledVermelho, LOW);
+
+  //TEMP FRIA
+  if (temperatura < L) {
+
+    digitalWrite(ledAzul, HIGH);
+    //TEMP NORMAL
+  } else if (temperatura >= L && temperatura <= H) {
+
+    digitalWrite(ledVerde, HIGH);
+  //TEMP CALOR
+  } else {
+
+    digitalWrite(ledVermelho, HIGH);
+  }
+
+  delay(500);
+}
